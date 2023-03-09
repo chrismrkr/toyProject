@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="en">
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>second Auth</title>
+</head>
+<body>
+    <div class="container">
+        <form th:action="@{/login}" class="form-signin" method="post">
+            <div class="form-group">
+                <input type="text" class="form-control" id="pin" name="password" placeholder="pin" required>
+            </div >
+            <button type="submit" class="submit-button">pin 인증</button>
+        </form>
+    </div>
+</body>
+</html>
