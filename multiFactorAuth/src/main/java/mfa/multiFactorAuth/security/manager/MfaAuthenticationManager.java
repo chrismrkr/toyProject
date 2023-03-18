@@ -72,7 +72,7 @@ public class MfaAuthenticationManager implements AuthenticationManager, MessageS
         int size = this.providers.size();
         Iterator var9 = this.getProviders().iterator();
 
-        // necessary for customizing
+
         Authentication currentAuthentication = SecurityContextHolder.getContext().getAuthentication();
         int authLevel = 0;
         if(currentAuthentication instanceof MfaAuthenticationToken) {

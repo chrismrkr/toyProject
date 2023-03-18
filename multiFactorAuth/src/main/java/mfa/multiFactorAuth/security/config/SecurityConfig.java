@@ -3,20 +3,22 @@ package mfa.multiFactorAuth.security.config;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import mfa.multiFactorAuth.security.common.MfaAuthenticationEntryPoint;
+import mfa.multiFactorAuth.security.factory.UrlResourceMapFactoryBean;
 import mfa.multiFactorAuth.security.handler.MfaAccessDeniedHandler;
 import mfa.multiFactorAuth.security.handler.MfaAuthenticationSuccessHandler;
 import mfa.multiFactorAuth.security.interceptor.MfaFilterSecurityInterceptor;
 import mfa.multiFactorAuth.security.manager.MfaAuthenticationManager;
+import mfa.multiFactorAuth.security.metasource.UrlFilterInvocationSecurityMetadataSource;
 import mfa.multiFactorAuth.security.provider.FormAuthenticationProvider;
 import mfa.multiFactorAuth.security.provider.SubAuthenticationProvider;
 import mfa.multiFactorAuth.security.service.FormUserDetailsService;
-import mfa.multiFactorAuth.security.voter.MfaVoter;
+import mfa.multiFactorAuth.security.voter.MfaAccessDecisionManager;
+import mfa.multiFactorAuth.service.SecurityResourceService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.access.AccessDecisionManager;
 import org.springframework.security.access.AccessDecisionVoter;
-import org.springframework.security.access.ConfigAttribute;
-import org.springframework.security.access.vote.AffirmativeBased;
+import org.springframework.security.access.vote.RoleVoter;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -25,12 +27,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.access.AccessDeniedHandler;
-import org.springframework.security.web.access.expression.ExpressionBasedFilterInvocationSecurityMetadataSource;
-import org.springframework.security.web.access.expression.WebExpressionVoter;
-import org.springframework.security.web.access.intercept.DefaultFilterInvocationSecurityMetadataSource;
+import org.springframework.security.web.access.intercept.FilterInvocationSecurityMetadataSource;
 import org.springframework.security.web.access.intercept.FilterSecurityInterceptor;
-import org.springframework.security.web.util.matcher.AnyRequestMatcher;
-import org.springframework.security.web.util.matcher.RequestMatcher;
 
 import java.util.*;
 
@@ -40,6 +38,9 @@ import java.util.*;
 public class SecurityConfig {
     private final FormUserDetailsService formUserDetailsService;
     private final MfaAuthenticationSuccessHandler mfaAuthenticationSuccessHandler;
+    private final SecurityResourceService securityResourceService;
+    private String[] permitAllResources = {"/login"};
+
     @Bean
     public PasswordEncoder passwordEncoder() {
         return PasswordEncoderFactories.createDelegatingPasswordEncoder();
@@ -69,34 +70,24 @@ public class SecurityConfig {
     }
 
     public MfaFilterSecurityInterceptor filterSecurityInterceptor() throws Exception {
-        MfaFilterSecurityInterceptor mfaFilterSecurityInterceptor = new MfaFilterSecurityInterceptor();
-        mfaFilterSecurityInterceptor.setAccessDecisionManager(affirmativeBased());
-        mfaFilterSecurityInterceptor.setSecurityMetadataSource(filterInvocationSecurityMetadataSource());
+        MfaFilterSecurityInterceptor mfaFilterSecurityInterceptor = new MfaFilterSecurityInterceptor(permitAllResources);
+        mfaFilterSecurityInterceptor.setAccessDecisionManager(mfaAccessDecisionManager());
+        mfaFilterSecurityInterceptor.setSecurityMetadataSource(urlFilterInvocationSecurityMetadataSource());
         return mfaFilterSecurityInterceptor;
     }
 
-    private AccessDecisionManager affirmativeBased() {
-        List<AccessDecisionVoter<?>> decisionVoters = new ArrayList<>();
-        decisionVoters.add(new WebExpressionVoter());
-        return new MfaVoter(decisionVoters);
+    private AccessDecisionManager mfaAccessDecisionManager() {
+        List<AccessDecisionVoter<? extends Object> > decisionVoters = new ArrayList<>();
+        decisionVoters.add(new RoleVoter());
+        return new MfaAccessDecisionManager(decisionVoters);
     }
 
-    public DefaultFilterInvocationSecurityMetadataSource filterInvocationSecurityMetadataSource() {
-        LinkedHashMap<RequestMatcher, Collection<ConfigAttribute>> requestMap = new LinkedHashMap<>();
-
-
-
-        RequestMatcher anyRequestMatcher = AnyRequestMatcher.INSTANCE;
-        List<ConfigAttribute> anyRequestList = new ArrayList<>();
-        anyRequestList.add(new ConfigAttribute() {
-            @Override
-            public String getAttribute() {
-                return "authenticated";
-            }
-        });
-        requestMap.put(anyRequestMatcher, anyRequestList);
-
-        return new DefaultFilterInvocationSecurityMetadataSource(requestMap);
+    @Bean
+    public FilterInvocationSecurityMetadataSource urlFilterInvocationSecurityMetadataSource() throws Exception {
+        return new UrlFilterInvocationSecurityMetadataSource(urlResourceMapFactoryBean().getObject(), securityResourceService);
+    }
+    private UrlResourceMapFactoryBean urlResourceMapFactoryBean() {
+        return new UrlResourceMapFactoryBean(securityResourceService);
     }
 
     @Bean

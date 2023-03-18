@@ -11,22 +11,17 @@ import org.springframework.security.web.FilterInvocation;
 import java.util.Collection;
 import java.util.List;
 
-public class MfaVoter extends AbstractAccessDecisionManager {
-
-    public MfaVoter(List<AccessDecisionVoter<?>> decisionVoters) {
+public class MfaAccessDecisionManager extends AbstractAccessDecisionManager {
+    public MfaAccessDecisionManager(List<AccessDecisionVoter<?>> decisionVoters) {
         super(decisionVoters);
     }
 
     @Override
     @SuppressWarnings({ "rawtypes", "unchecked" })
     public void decide(Authentication authentication, Object object, Collection<ConfigAttribute> configAttributes)
-            throws AccessDeniedException {
+            throws AccessDeniedException { // return: 리소스 접근 허용
         /* 인증 단계 확인 */
         FilterInvocation filterInvocation = (FilterInvocation)object;
-        if(filterInvocation.getRequestUrl().equals("/login")) { // 임시코드. 이 부분 securityMetaSource 생성하면서 제거함
-            return;
-        }
-
         if(authentication instanceof MfaAuthenticationToken) {
             if(((MfaAuthenticationToken)authentication).getAuthLevel() == 1) {
                 if (filterInvocation.getRequestUrl().equals("/second-login")) {
@@ -34,9 +29,6 @@ public class MfaVoter extends AbstractAccessDecisionManager {
                 } else {
                     throw new AccessDeniedException(this.messages.getMessage("AbstractAccessDecisionManager.accessDenied", "Access is denied"));
                 }
-            }
-            else {
-                return;
             }
         }
 

@@ -3,14 +3,12 @@ package mfa.multiFactorAuth.domain;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.Id;
+import javax.persistence.*;
+import java.util.HashSet;
+import java.util.Set;
 
 @Entity
 @Getter
-@NoArgsConstructor
 public class Account {
     @Id
     @GeneratedValue
@@ -20,6 +18,8 @@ public class Account {
     private String username;
     private String password;
     private int age;
+    @OneToMany(mappedBy = "account")
+    private Set<AccountRole> accountRoleSet = new HashSet<>();
 
     public static Builder builder() {
         return new Builder();
@@ -49,4 +49,5 @@ public class Account {
         this.password = builder.password;
         this.age = builder.age;
     }
+    protected Account() {}
 }

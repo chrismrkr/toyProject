@@ -23,8 +23,11 @@ public class MfaAccessDeniedHandler implements AccessDeniedHandler {
     public void handle(HttpServletRequest request, HttpServletResponse response, AccessDeniedException accessDeniedException) throws IOException, ServletException {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if(authentication instanceof MfaAuthenticationToken) {
-            log.info("redirect /second-login");
-            response.sendRedirect("/second-login");
+            int authLevel = ((MfaAuthenticationToken)authentication).getAuthLevel();
+            if(authLevel == 1) {
+                log.info("redirect /second-login");
+                response.sendRedirect("/second-login");
+            }
         }
         else {
             response.sendRedirect(errorPage);
