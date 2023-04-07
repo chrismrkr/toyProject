@@ -54,4 +54,4 @@ SuccessHandler를 통해 메인 페이지로 redirect한다.(GET /)
 
 ## 2023-04-01 개선사항
 
-2차 인증 단계 구체화
+2차 인증 단계 구체화 및 2차 인증단계 mockito Test
